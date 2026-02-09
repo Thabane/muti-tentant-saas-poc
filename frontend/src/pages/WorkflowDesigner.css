@@ -1,0 +1,145 @@
+/* Properties Panel Styles */
+.bio-properties-panel {
+  background: #f8f8f8;
+  border-left: 1px solid #ddd;
+}
+
+.bio-properties-panel-header {
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+  padding: 10px 15px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.bio-properties-panel-group {
+  margin: 15px 0;
+}
+
+.bio-properties-panel-group-header {
+  background: #e8e8e8;
+  padding: 8px 15px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.bio-properties-panel-entry {
+  padding: 10px 15px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.bio-properties-panel-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.bio-properties-panel-input,
+.bio-properties-panel-textarea,
+.bio-properties-panel-select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.bio-properties-panel-input:focus,
+.bio-properties-panel-textarea:focus,
+.bio-properties-panel-select:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
+}
+
+.bio-properties-panel-textarea {
+  min-height: 60px;
+  resize: vertical;
+  font-family: monospace;
+}
+
+.bio-properties-panel-checkbox {
+  margin-right: 6px;
+}
+
+.bio-properties-panel-button {
+  padding: 6px 12px;
+  background: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 5px;
+}
+
+.bio-properties-panel-button:hover {
+  background: #1565c0;
+}
+
+.bio-properties-panel-button-secondary {
+  background: #757575;
+}
+
+.bio-properties-panel-button-secondary:hover {
+  background: #616161;
+}
+
+.bio-properties-panel-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.bio-properties-panel-list-item {
+  padding: 8px 15px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bio-properties-panel-list-item:hover {
+  background: #f5f5f5;
+}
+
+.bio-properties-panel-remove-button {
+  background: #d32f2f;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.bio-properties-panel-remove-button:hover {
+  background: #c62828;
+}
+
+.bio-properties-panel-description {
+  font-size: 11px;
+  color: #666;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.bio-properties-panel-error {
+  color: #d32f2f;
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.bio-properties-panel-placeholder {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+}
