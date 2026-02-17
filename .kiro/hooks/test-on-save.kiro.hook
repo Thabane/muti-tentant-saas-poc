@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Run Tests on Save",
+  "description": "Automatically runs unit tests when any file is saved",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "*"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Run basic unit tests for the edited file. If no test file exists, create one with appropriate test cases, then run the tests to ensure code quality"
+  }
+}

@@ -7,3 +7,11 @@ build/
 coverage/
 .vscode/
 .idea/
+
+# Java build artifacts
+target/
+*.class
+*.jar
+*.war
+*.ear
+.jqwik-database

@@ -5,6 +5,7 @@
 - Node.js 18+ and npm
 - Docker and Docker Compose
 - PostgreSQL (via Docker)
+- Java 17+ and Maven 3.9+ (for Java backend)
 
 ## Quick Start
 
@@ -62,9 +63,84 @@ npm run dev
 ### 6. Access the Application
 
 - Frontend: http://localhost:5173
-- Backend API: http://localhost:3000
+- Backend API (Node.js): http://localhost:3000
+- Backend API (Java): http://localhost:3000 (when running Java backend)
 - Camunda Cockpit: http://localhost:8080/camunda (admin/admin)
 - Camunda REST API: http://localhost:8080/engine-rest
+
+## Java Backend Setup (Migration)
+
+The project includes a Java 21 Spring Boot backend as a migration path from Node.js. Both backends can coexist and share the same database.
+
+### Prerequisites for Java Backend
+
+- Java 17 or higher (Java 21 recommended)
+- Maven 3.9+
+- Same PostgreSQL database as Node.js backend
+
+### Build and Test Java Backend
+
+```bash
+cd java-backend
+
+# Run tests
+mvn test
+
+# Build the application
+mvn clean package
+
+# Run the application
+java -jar target/workflow-saas-1.0.0.jar
+```
+
+### Configure Java Backend
+
+Create `java-backend/src/main/resources/application.properties`:
+
+```properties
+# Server Configuration
+server.port=3000
+
+# Database Configuration
+spring.datasource.url=${DATABASE_URL:jdbc:postgresql://localhost:5432/workflow_saas}
+spring.datasource.username=${DB_USER:postgres}
+spring.datasource.password=${DB_PASSWORD:postgres}
+
+# JPA Configuration
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.show-sql=false
+
+# JWT Configuration
+jwt.secret=${JWT_SECRET:your-secret-key-min-256-bits}
+jwt.expiration=604800000
+
+# Camunda Configuration
+camunda.rest.url=${CAMUNDA_REST_URL:http://localhost:8080/engine-rest}
+
+# Logging
+logging.level.com.workflowsaas=INFO
+```
+
+### Run Java Backend
+
+```bash
+cd java-backend
+mvn spring-boot:run
+```
+
+Or using the packaged JAR:
+
+```bash
+java -jar target/workflow-saas-1.0.0.jar
+```
+
+### Migration Notes
+
+- The Java backend uses the same database schema as Node.js
+- JWT tokens are interoperable between both backends
+- Password hashes (BCrypt) are compatible
+- Both backends can run simultaneously for gradual migration
+- API endpoints are identical for frontend compatibility
 
 ## Usage Flow
 
