@@ -1,0 +1,34 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-insert-default-tenant
+      author: system
+      comment: Insert default tenant for development with security disabled
+      changes:
+        - insert:
+            tableName: tenants
+            columns:
+              - column:
+                  name: id
+                  value: 00000000-0000-0000-0000-000000000001
+              - column:
+                  name: name
+                  value: Default Tenant
+              - column:
+                  name: slug
+                  value: default
+              - column:
+                  name: email
+                  value: default@example.com
+              - column:
+                  name: password_hash
+                  value: default_password_hash
+              - column:
+                  name: created_at
+                  valueComputed: NOW()
+              - column:
+                  name: updated_at
+                  valueComputed: NOW()
+      rollback:
+        - delete:
+            tableName: tenants
+            where: id = '00000000-0000-0000-0000-000000000001'

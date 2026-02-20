@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-add-tenant-features
+      author: system
+      changes:
+        - addColumn:
+            tableName: tenants
+            columns:
+              - column:
+                  name: features
+                  type: jsonb
+              - column:
+                  name: onboarding_completed
+                  type: boolean
+                  defaultValueBoolean: false

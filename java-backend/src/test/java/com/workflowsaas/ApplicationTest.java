@@ -10,8 +10,12 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Test class for the main Application.
  * Verifies that the Spring Boot application context loads successfully.
+ * 
+ * Note: Excludes Spring Security auto-configuration since security is disabled.
  */
-@SpringBootTest
+@SpringBootTest(properties = {
+    "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration,org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration"
+})
 class ApplicationTest {
 
     @Autowired

@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/changes/000-create-initial-schema.yaml
+  - include:
+      file: db/changelog/changes/001-create-apps-table.yaml
+  - include:
+      file: db/changelog/changes/002-update-workflows-table.yaml
+  - include:
+      file: db/changelog/changes/003-add-tenant-features.yaml
+  - include:
+      file: db/changelog/changes/004-insert-default-tenant.yaml
+  - include:
+      file: db/changelog/changes/001-add-deployment-timestamps.yaml

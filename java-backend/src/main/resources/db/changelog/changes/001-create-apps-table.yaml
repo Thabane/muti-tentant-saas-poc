@@ -1,0 +1,70 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-apps-table
+      author: system
+      changes:
+        - createTable:
+            tableName: apps
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                  defaultValueComputed: gen_random_uuid()
+              - column:
+                  name: tenant_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: api_key_hash
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: NOW()
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: NOW()
+        
+        - addUniqueConstraint:
+            tableName: apps
+            columnNames: tenant_id, name
+            constraintName: unique_app_name_per_tenant
+        
+        - addForeignKeyConstraint:
+            baseTableName: apps
+            baseColumnNames: tenant_id
+            constraintName: fk_apps_tenant
+            referencedTableName: tenants
+            referencedColumnNames: id
+            onDelete: CASCADE
+        
+        - createIndex:
+            tableName: apps
+            indexName: idx_apps_tenant_id
+            columns:
+              - column:
+                  name: tenant_id
+        
+        - createIndex:
+            tableName: apps
+            indexName: idx_apps_api_key_hash
+            columns:
+              - column:
+                  name: api_key_hash

@@ -1,17 +1,14 @@
 package com.workflowsaas.config;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.client.RestTemplate;
 
 /**
- * Configuration for Camunda REST client.
+ * Configuration for Camunda embedded engine.
+ * The engine and services are automatically configured by Camunda Spring Boot Starter.
+ * No manual bean definitions needed - they're provided by auto-configuration.
  */
 @Configuration
 public class CamundaConfig {
-    
-    @Bean
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
-    }
+    // Camunda beans (ProcessEngine, RuntimeService, RepositoryService, etc.) 
+    // are auto-configured by camunda-bpm-spring-boot-starter
 }

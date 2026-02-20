@@ -19,5 +19,9 @@ public interface WorkflowRepository extends JpaRepository<Workflow, UUID> {
     
     Optional<Workflow> findByIdAndTenantId(UUID id, UUID tenantId);
     
-    boolean existsByTenantIdAndNameAndVersion(UUID tenantId, String name, Integer version);
+    boolean existsByTenantIdAndName(UUID tenantId, String name);
+    
+    boolean existsByApiPath(String apiPath);
+    
+    List<Workflow> findByAppIdOrderByCreatedAtDesc(UUID appId);
 }

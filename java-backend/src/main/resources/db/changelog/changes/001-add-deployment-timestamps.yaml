@@ -1,0 +1,30 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-add-deployment-timestamps
+      author: system
+      changes:
+        - addColumn:
+            tableName: deployments
+            columns:
+              - column:
+                  name: deployed_at
+                  type: timestamp
+                  defaultValueComputed: NOW()
+              - column:
+                  name: promoted_at
+                  type: timestamp
+              - column:
+                  name: deployment_key
+                  type: varchar(255)
+              - column:
+                  name: metadata
+                  type: jsonb
+                  defaultValue: '{}'
+        
+        - dropColumn:
+            tableName: deployments
+            columnName: version
+        
+        - dropColumn:
+            tableName: deployments
+            columnName: camunda_deployment_id

@@ -1,7 +1,9 @@
 package com.workflowsaas.exception;
 
+import com.workflowsaas.config.ApplicationProperties;
 import com.workflowsaas.dto.response.ErrorResponse;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,11 +16,12 @@ import java.io.StringWriter;
 /**
  * Global exception handler for consistent error responses.
  */
+@Slf4j
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
     
-    @Value("${spring.profiles.active:production}")
-    private String activeProfile;
+    private final ApplicationProperties applicationProperties;
     
     @ExceptionHandler(WorkflowSaasException.class)
     public ResponseEntity<ErrorResponse> handleWorkflowSaasException(WorkflowSaasException ex) {
@@ -29,12 +32,33 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(ex.getStatusCode()).body(response);
     }
     
+    @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidationException(
+            org.springframework.web.bind.MethodArgumentNotValidException ex) {
+        String message = ex.getBindingResult().getFieldErrors().stream()
+            .map(error -> error.getField() + ": " + error.getDefaultMessage())
+            .reduce((a, b) -> a + "; " + b)
+            .orElse("Validation failed");
+
+        log.error("Validation error: {}", message, ex);
+
+        ErrorResponse response = new ErrorResponse(message, isDevelopment() ? getStackTrace(ex) : null);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+    
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         String message = "Data integrity violation";
-        if (ex.getMessage().contains("unique")) {
-            message = "Duplicate entry - email or slug already exists";
+        String exMessage = ex.getMessage();
+        
+        if (exMessage != null) {
+            if (exMessage.contains("unique_app_name_per_tenant")) {
+                message = "An app with this name already exists";
+            } else if (exMessage.contains("unique")) {
+                message = "Duplicate entry - this value already exists";
+            }
         }
+        
         ErrorResponse response = new ErrorResponse(message, isDevelopment() ? getStackTrace(ex) : null);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
@@ -49,7 +73,8 @@ public class GlobalExceptionHandler {
     }
     
     private boolean isDevelopment() {
-        return "development".equals(activeProfile) || "dev".equals(activeProfile);
+        String profile = applicationProperties.getProfile();
+        return "development".equals(profile) || "dev".equals(profile);
     }
     
     private String getStackTrace(Exception ex) {

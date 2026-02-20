@@ -136,11 +136,16 @@ function WorkflowDesigner() {
       const wf = response.data;
       setWorkflow(wf);
       setName(wf.name);
-      setWorkflowType(wf.type);
+      // Convert type to lowercase for modeler initialization
+      const type = wf.type.toLowerCase();
+      setWorkflowType(type);
       
-      const xml = wf.type === 'bpmn' ? wf.bpmn_xml : wf.dmn_xml;
-      if (xml) {
-        await modelerRef.current?.importXML(xml);
+      // Wait for modeler to be initialized with correct type
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const xml = wf.bpmnXml || wf.bpmn_xml;
+      if (xml && modelerRef.current) {
+        await modelerRef.current.importXML(xml);
       }
     } catch (error) {
       console.error('Failed to load workflow:', error);
@@ -166,8 +171,8 @@ function WorkflowDesigner() {
       
       const payload = {
         name,
-        type: workflowType,
-        ...(workflowType === 'bpmn' ? { bpmn_xml: xml } : { dmn_xml: xml })
+        type: workflowType.toUpperCase(), // Convert to uppercase for backend
+        bpmnXml: xml // Always use bpmnXml field (backend stores both BPMN and DMN in this field)
       };
 
       if (id) {

@@ -1,0 +1,57 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-update-workflows-table
+      author: system
+      changes:
+        - addColumn:
+            tableName: workflows
+            columns:
+              - column:
+                  name: app_id
+                  type: uuid
+              - column:
+                  name: parent_workflow_id
+                  type: uuid
+              - column:
+                  name: api_path
+                  type: varchar(500)
+              - column:
+                  name: sub_service
+                  type: varchar(255)
+        
+        - addForeignKeyConstraint:
+            baseTableName: workflows
+            baseColumnNames: app_id
+            constraintName: fk_workflows_app
+            referencedTableName: apps
+            referencedColumnNames: id
+            onDelete: CASCADE
+        
+        - addForeignKeyConstraint:
+            baseTableName: workflows
+            baseColumnNames: parent_workflow_id
+            constraintName: fk_workflows_parent
+            referencedTableName: workflows
+            referencedColumnNames: id
+            onDelete: SET NULL
+        
+        - createIndex:
+            tableName: workflows
+            indexName: idx_workflows_app_id
+            columns:
+              - column:
+                  name: app_id
+        
+        - createIndex:
+            tableName: workflows
+            indexName: idx_workflows_parent_id
+            columns:
+              - column:
+                  name: parent_workflow_id
+        
+        - createIndex:
+            tableName: workflows
+            indexName: idx_workflows_api_path
+            columns:
+              - column:
+                  name: api_path

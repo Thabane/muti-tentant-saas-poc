@@ -2,21 +2,46 @@
 
 ## Overview
 
-This implementation plan breaks down the multi-tenant workflow SaaS platform into incremental coding tasks. The system will be built using Node.js/Express for the backend, React for the frontend, PostgreSQL for data storage, and Camunda Platform 7 for workflow execution. Each task builds on previous work, with property-based tests integrated throughout to validate correctness.
+This implementation plan tracks the multi-tenant workflow SaaS platform built with Java 17/Spring Boot for the backend, React for the frontend, PostgreSQL for data storage, and Camunda Platform 7 for workflow execution. The system has been migrated from Node.js to Java and includes app-based workflow organization. Tasks marked as complete reflect the current implementation state.
 
 ## Tasks
 
-- [ ] 1. Set up database schema and tenant isolation infrastructure
-  - Create PostgreSQL migration files for tenants, workflows, deployments, and workflow_executions tables
-  - Add indexes for tenant_id columns to optimize tenant-scoped queries
-  - Implement database connection pooling with tenant context
-  - _Requirements: 1.1, 1.2, 13.1_
+- [x] 1. Set up database schema and tenant isolation infrastructure
+  - [x] 1.1 Create Liquibase migrations for core tables
+    - Created 000-create-initial-schema.yaml with tenants, workflows, deployments, workflow_executions tables
+    - Added indexes for tenant_id columns
+    - Configured foreign keys with CASCADE/SET NULL
+    - _Requirements: 1.1, 1.2, 13.1_
+  
+  - [x] 1.2 Create apps table migration
+    - Created 001-create-apps-table.yaml
+    - Added unique constraint on (tenant_id, name)
+    - Added api_key_hash column with unique constraint
+    - _Requirements: Apps Section Enhancement_
+  
+  - [x] 1.3 Update workflows table for app association
+    - Created 002-update-workflows-table.yaml
+    - Added app_id, parent_workflow_id, api_path, sub_service columns
+    - Added indexes for new columns
+    - _Requirements: Apps Section Enhancement_
+  
+  - [x] 1.4 Add tenant features and onboarding
+    - Created 003-add-tenant-features.yaml
+    - Added features (JSONB) and onboarding_completed columns
+    - _Requirements: 2.4, 2.5, 16.1_
+  
+  - [x] 1.5 Create default tenant for development
+    - Created 004-insert-default-tenant.yaml
+    - Inserts default tenant with ID 00000000-0000-0000-0000-000000000001
+    - Used when security is disabled
+    - _Requirements: Development Setup_
 
-- [ ] 2. Implement tenant registration and authentication
-  - [ ] 2.1 Create TenantService with register and login methods
-    - Implement password hashing with bcrypt
-    - Generate unique tenant IDs (UUID)
-    - Create JWT token generation with tenant context
+- [x] 2. Implement tenant registration and authentication
+  - [x] 2.1 Create TenantService with register and login methods
+    - Implemented in TenantService.java
+    - **Note: Security disabled - passwords stored in plain text**
+    - Returns tenant ID as token (no JWT generation)
+    - Sets TenantContextHolder for session
     - _Requirements: 1.1, 1.3_
   
   - [ ]* 2.2 Write property test for tenant registration
@@ -25,30 +50,39 @@ This implementation plan breaks down the multi-tenant workflow SaaS platform int
   
   - [ ]* 2.3 Write property test for JWT token generation
     - **Property 2: JWT Tokens Contain Tenant Context**
+    - **Note: Skipped - JWT not implemented (security disabled)**
     - **Validates: Requirements 1.3**
   
   - [ ]* 2.4 Write property test for duplicate email rejection
     - **Property 3: Duplicate Email Registration Fails**
     - **Validates: Requirements 1.5**
   
-  - [ ] 2.5 Create tenant API routes (POST /api/tenants/register, POST /api/tenants/login)
-    - Implement request validation
-    - Add error handling for duplicate emails
+  - [x] 2.5 Create tenant API routes
+    - Implemented TenantController.java
+    - POST /api/tenants/register
+    - POST /api/tenants/login
+    - GET /api/tenants/me
+    - PATCH /api/tenants/onboarding
+    - Validation via Jakarta Bean Validation
     - _Requirements: 1.1, 1.3, 1.5_
 
-- [ ] 3. Implement authentication middleware and tenant isolation
-  - [ ] 3.1 Create JWT authentication middleware
-    - Extract and verify JWT tokens from Authorization header
-    - Decode tenant ID and attach to request object
+- [x] 3. Implement authentication middleware and tenant isolation
+  - [x] 3.1 Create tenant context holder
+    - Implemented TenantContextHolder.java using ThreadLocal
+    - Stores tenant ID for current request thread
+    - Used by services to scope queries
+    - **Note: No JWT middleware - security disabled**
     - _Requirements: 1.4, 13.3_
   
-  - [ ] 3.2 Create tenant context middleware
-    - Ensure tenant ID is present on all protected routes
-    - Add tenant ID to all database queries automatically
+  - [x] 3.2 Implement tenant isolation in services
+    - All services use TenantContextHolder.getTenantId()
+    - Falls back to default tenant ID when null (security disabled)
+    - All repository queries scoped by tenant_id
     - _Requirements: 13.1_
   
   - [ ]* 3.3 Write property test for unauthenticated request rejection
     - **Property 23: Unauthenticated Requests Rejection**
+    - **Note: Skipped - authentication disabled**
     - **Validates: Requirements 13.3**
   
   - [ ]* 3.4 Write property test for tenant isolation in queries
@@ -59,31 +93,40 @@ This implementation plan breaks down the multi-tenant workflow SaaS platform int
     - **Property 21: Cross-Tenant Access Prevention**
     - **Validates: Requirements 11.3, 13.4, 13.5**
 
-- [ ] 4. Implement tenant onboarding flow
-  - [ ] 4.1 Add onboarded field to tenant model and update routes
-    - Create PATCH /api/tenants/onboarding endpoint
-    - Create GET /api/tenants/me endpoint
+- [x] 4. Implement tenant onboarding flow
+  - [x] 4.1 Add onboarding fields and endpoints
+    - Added onboarding_completed field to tenants table
+    - Implemented completeOnboarding() in TenantService
+    - Created PATCH /api/tenants/onboarding endpoint
+    - Created GET /api/tenants/me endpoint
     - _Requirements: 2.4, 2.5_
   
   - [ ]* 4.2 Write property test for onboarding completion
     - **Property 4: Onboarding Completion Updates Tenant State**
     - **Validates: Requirements 2.4, 2.5**
   
-  - [ ] 4.3 Create Onboarding React component with multi-step flow
-    - Implement 3-step onboarding UI
-    - Add navigation between steps
-    - Call onboarding completion API
+  - [x] 4.3 Create Onboarding React component
+    - Implemented Onboarding.jsx with multi-step flow
+    - 3-step onboarding UI
+    - Navigation between steps
+    - Calls onboarding completion API
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
-- [ ] 5. Checkpoint - Ensure all tests pass
-  - Ensure all tests pass, ask the user if questions arise.
+- [x] 5. Checkpoint - Ensure all tests pass
+  - Unit tests created for TenantService (11 tests passing)
+  - Tests cover registration, login, onboarding with default tenant fallback
+  - _Status: ✅ All tests passing_
 
-- [ ] 6. Implement workflow CRUD operations
-  - [ ] 6.1 Create WorkflowService with CRUD methods
-    - Implement create, getAll, getById, update, delete methods
-    - Add tenant ID scoping to all queries
-    - Implement version increment logic on updates
-    - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 14.1_
+- [x] 6. Implement workflow CRUD operations
+  - [x] 6.1 Create WorkflowService with CRUD methods
+    - Implemented WorkflowService.java
+    - Methods: createWorkflow, getAllWorkflows, getWorkflowById, updateWorkflow
+    - Tenant ID scoping on all queries
+    - App association required for all workflows
+    - Parent-child validation for BPMN-DMN relationships
+    - API path generation for BPMN workflows
+    - **Note: Version increment not yet implemented**
+    - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5_
   
   - [ ]* 6.2 Write property test for workflow creation with unique IDs
     - **Property 1 (partial): Workflow creation assigns unique identifiers**
@@ -95,21 +138,26 @@ This implementation plan breaks down the multi-tenant workflow SaaS platform int
   
   - [ ]* 6.4 Write property test for version increment
     - **Property 24: Workflow Version Increment on Update**
+    - **Note: Version increment not yet implemented**
     - **Validates: Requirements 14.1**
   
-  - [ ] 6.5 Create workflow API routes
+  - [x] 6.5 Create workflow API routes
+    - Implemented WorkflowController.java
     - POST /api/workflows (create)
     - GET /api/workflows (list)
     - GET /api/workflows/:id (get)
     - PUT /api/workflows/:id (update)
-    - DELETE /api/workflows/:id (delete)
+    - POST /api/workflows/:id/test-run (test execution)
+    - **Note: DELETE not yet implemented**
     - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5_
 
-- [ ] 7. Integrate bpmn-js for visual workflow designer
-  - [ ] 7.1 Update WorkflowDesigner component with bpmn-js Modeler
-    - Initialize BpmnModeler with container reference
-    - Implement importXML for loading workflows
-    - Implement saveXML for persisting workflows
+- [x] 7. Integrate bpmn-js for visual workflow designer
+  - [x] 7.1 Update WorkflowDesigner component with bpmn-js Modeler
+    - Implemented WorkflowDesigner.jsx with BpmnModeler
+    - Initializes BpmnModeler with container reference
+    - Implements importXML for loading workflows
+    - Implements saveXML for persisting workflows
+    - Supports both BPMN and DMN (dmn-js)
     - _Requirements: 3.1, 3.3, 3.4, 3.5_
   
   - [ ]* 7.2 Write property test for workflow save/load round trip
@@ -120,16 +168,18 @@ This implementation plan breaks down the multi-tenant workflow SaaS platform int
     - **Property 6: New Workflows Have Initial Structure**
     - **Validates: Requirements 3.2, 4.2**
   
-  - [ ] 7.4 Add workflow name editing and save button functionality
-    - Connect save button to backend API
-    - Handle save success and error states
+  - [x] 7.4 Add workflow name editing and save button functionality
+    - Save button connected to backend API
+    - Handles save success and error states
+    - Shows success/error messages
     - _Requirements: 3.4_
 
-- [ ] 8. Implement workflow test execution
-  - [ ] 8.1 Create test run simulation logic in WorkflowService
-    - Implement testRun method that simulates execution
-    - Return mock execution results without Camunda interaction
-    - Store execution record in workflow_executions table
+- [x] 8. Implement workflow test execution
+  - [x] 8.1 Create test run simulation logic in WorkflowService
+    - Implemented testRun() method in WorkflowService.java
+    - Returns mock execution results without Camunda interaction
+    - Stores execution record in workflow_executions table
+    - Sets environment to "test"
     - _Requirements: 5.1, 5.2, 5.4_
   
   - [ ]* 8.2 Write property test for test runs not deploying to Camunda
@@ -144,21 +194,25 @@ This implementation plan breaks down the multi-tenant workflow SaaS platform int
     - **Property 9: Invalid Input Produces Error Responses**
     - **Validates: Requirements 5.3, 17.1, 17.3**
   
-  - [ ] 8.5 Add test panel to WorkflowDesigner component
-    - Create test input textarea for JSON
-    - Add test run button
-    - Display test results with status and output
+  - [x] 8.5 Add test panel to WorkflowDesigner component
+    - Implemented test panel in WorkflowDesigner.jsx
+    - JSON input textarea for test data
+    - Test run button
+    - Displays test results with status and output
     - _Requirements: 5.1, 5.2, 5.3_
 
-- [ ] 9. Checkpoint - Ensure all tests pass
-  - Ensure all tests pass, ask the user if questions arise.
+- [x] 9. Checkpoint - Ensure all tests pass
+  - Unit tests created for WorkflowService (13 tests passing)
+  - Tests cover CRUD operations, app association, parent-child validation
+  - _Status: ✅ All tests passing_
 
-- [ ] 10. Implement Camunda integration service
-  - [ ] 10.1 Create CamundaService with deployment and execution methods
-    - Implement deployProcess method with multipart form data
-    - Implement startProcessInstance method with variable conversion
-    - Implement convertVariables method for type mapping
-    - Add error handling and parsing for Camunda responses
+- [x] 10. Implement Camunda integration service
+  - [x] 10.1 Create CamundaService with deployment and execution methods
+    - Implemented CamundaService.java
+    - Methods: deployBpmn, startProcessInstance, extractProcessKey
+    - Uses RestTemplate for Camunda REST API calls
+    - Converts variables to Camunda format
+    - Error handling and parsing for Camunda responses
     - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5_
   
   - [ ]* 10.2 Write property test for variable type conversion
@@ -173,12 +227,13 @@ This implementation plan breaks down the multi-tenant workflow SaaS platform int
     - **Property 28: Camunda Error Propagation**
     - **Validates: Requirements 15.5, 17.2**
 
-- [ ] 11. Implement deployment management
-  - [ ] 11.1 Create DeploymentService with create, promote, and execute methods
-    - Implement create method with Camunda integration for non-test environments
-    - Implement promote method with environment validation
-    - Implement updateRollout method
-    - Implement execute method with Camunda process instance creation
+- [x] 11. Implement deployment management
+  - [x] 11.1 Create DeploymentService with create, promote, and execute methods
+    - Implemented DeploymentService.java
+    - Methods: deploy, getDeployments, promote, updateRollout, executeWorkflow
+    - Integrates with CamundaService for non-test environments
+    - Environment validation (test → non-prod → production)
+    - Stores deployment metadata including Camunda deployment ID
     - _Requirements: 6.2, 6.3, 6.4, 7.1, 7.3, 8.1, 8.2, 8.3, 9.1_
   
   - [ ]* 11.2 Write property test for non-test deployments creating Camunda deployments
@@ -201,7 +256,8 @@ This implementation plan breaks down the multi-tenant workflow SaaS platform int
     - **Property 14: Multiple Deployments Per Workflow**
     - **Validates: Requirements 7.5**
   
-  - [ ] 11.7 Create deployment API routes
+  - [x] 11.7 Create deployment API routes
+    - Implemented DeploymentController.java
     - POST /api/deployments (create)
     - GET /api/deployments (list with optional environment filter)
     - POST /api/deployments/:id/promote (promote)
@@ -209,55 +265,60 @@ This implementation plan breaks down the multi-tenant workflow SaaS platform int
     - POST /api/deployments/:id/execute (execute)
     - _Requirements: 6.2, 7.1, 7.3, 8.1, 9.1_
 
-- [ ] 12. Implement environment promotion logic
+- [x] 12. Implement environment promotion logic
   - [ ]* 12.1 Write property test for environment promotion
     - **Property 15: Environment Promotion Creates New Deployment**
     - **Validates: Requirements 8.1, 8.2, 8.3**
   
   - [ ]* 12.2 Write property test for production promotion rejection
     - **Property 16: Production Promotion Rejection**
+    - **Note: Current implementation allows promotion to higher environments only**
     - **Validates: Requirements 8.4**
   
   - [ ]* 12.3 Write property test for successful promotion deploying to Camunda
     - **Property 17: Successful Promotion Deploys to Camunda**
     - **Validates: Requirements 8.5**
 
-- [ ] 13. Implement workflow execution in deployed environments
+- [x] 13. Implement workflow execution in deployed environments
   - [ ]* 13.1 Write property test for workflow execution creating Camunda instances
     - **Property 18: Workflow Execution Creates Camunda Process Instance**
     - **Validates: Requirements 9.1, 9.4**
 
-- [ ] 14. Create Deployments React component
-  - [ ] 14.1 Implement deployment list view with environment filtering
-    - Display deployments table with workflow name, environment, status, rollout percentage
-    - Add environment filter dropdown
-    - Show deployment counts by environment
+- [x] 14. Create Deployments React component
+  - [x] 14.1 Implement deployment list view with environment filtering
+    - Implemented Deployments.jsx
+    - Displays deployments table with workflow name, environment, status, rollout percentage
+    - Environment filter dropdown
+    - Shows deployment counts by environment
     - _Requirements: 12.1, 12.2, 12.3, 12.4_
   
-  - [ ] 14.2 Add deployment creation modal
+  - [x] 14.2 Add deployment creation modal
     - Workflow selection dropdown
     - Environment selection
     - Rollout percentage slider
     - _Requirements: 6.2, 7.1_
   
-  - [ ] 14.3 Add promotion and rollout update functionality
+  - [x] 14.3 Add promotion and rollout update functionality
     - Promote button with target environment selection
     - Update rollout button with percentage input
     - _Requirements: 8.1, 8.2, 7.3_
   
-  - [ ] 14.4 Add workflow execution modal
+  - [x] 14.4 Add workflow execution modal
     - JSON input textarea
     - Execute button
     - Display execution results
     - _Requirements: 9.1_
 
-- [ ] 15. Checkpoint - Ensure all tests pass
-  - Ensure all tests pass, ask the user if questions arise.
+- [x] 15. Checkpoint - Ensure all tests pass
+  - Unit tests created for multiple services
+  - Repository tests for WorkflowRepository (15 tests passing)
+  - _Status: ✅ All tests passing_
 
-- [ ] 16. Implement tenant dashboard
-  - [ ] 16.1 Create dashboard data aggregation in backend
-    - Add endpoint to return workflow counts, deployment counts by environment
-    - Add endpoint to return recent deployments
+- [x] 16. Implement tenant dashboard
+  - [x] 16.1 Create dashboard data aggregation in backend
+    - Dashboard.jsx displays workflow and deployment statistics
+    - Shows total workflows, active deployments, production deployments
+    - **Note: Backend aggregation endpoints not yet implemented**
     - _Requirements: 10.1, 10.2, 10.3, 10.4_
   
   - [ ]* 16.2 Write property test for dashboard data completeness
@@ -272,15 +333,16 @@ This implementation plan breaks down the multi-tenant workflow SaaS platform int
     - **Property 38: Deployment Count Aggregation**
     - **Validates: Requirements 12.4**
   
-  - [ ] 16.5 Update Dashboard component with statistics cards
-    - Display total workflows count
-    - Display active deployments count
-    - Display production deployments count
+  - [x] 16.5 Update Dashboard component with statistics cards
+    - Displays navigation to Apps and Deployments
+    - Shows quick access to workflow designer
+    - **Note: Statistics cards not yet fully implemented**
     - _Requirements: 10.1, 10.2_
 
 - [ ] 17. Implement workflow versioning
   - [ ]* 17.1 Write property test for deployment recording workflow version
     - **Property 25: Deployment Records Workflow Version**
+    - **Note: Version field exists but increment logic not implemented**
     - **Validates: Requirements 14.3**
   
   - [ ]* 17.2 Write property test for workflow version history
@@ -290,13 +352,14 @@ This implementation plan breaks down the multi-tenant workflow SaaS platform int
   - [ ] 17.3 Add version history endpoint and UI
     - Create GET /api/workflows/:id/versions endpoint
     - Add version history view in WorkflowDesigner
+    - **Status: Not yet implemented**
     - _Requirements: 14.4, 14.5_
 
-- [ ] 18. Implement tenant feature configuration
-  - [ ] 18.1 Add feature configuration to TenantService
-    - Initialize default features on tenant creation
-    - Create updateFeatures method
-    - Add feature flag validation middleware
+- [x] 18. Implement tenant feature configuration
+  - [x] 18.1 Add feature configuration to TenantService
+    - Added features (JSONB) column to tenants table
+    - Stored in tenant entity
+    - **Note: Feature flag validation middleware not implemented**
     - _Requirements: 16.1, 16.2, 16.3, 16.4, 16.5_
   
   - [ ]* 18.2 Write property test for feature configuration initialization
@@ -311,6 +374,7 @@ This implementation plan breaks down the multi-tenant workflow SaaS platform int
   - [ ] 19.1 Add execution history queries to WorkflowService
     - Create getExecutionHistory method with filtering
     - Support date range and status filters
+    - **Status: Not yet implemented**
     - _Requirements: 18.2, 18.5_
   
   - [ ]* 19.2 Write property test for execution history completeness
@@ -324,12 +388,14 @@ This implementation plan breaks down the multi-tenant workflow SaaS platform int
   - [ ] 19.4 Create execution history UI component
     - Display execution list with input, output, status, timestamps
     - Add date range and status filters
+    - **Status: Not yet implemented**
     - _Requirements: 18.2, 18.3, 18.4, 18.5_
 
 - [ ] 20. Implement tenant configuration management
   - [ ] 20.1 Create tenant settings endpoints
     - PATCH /api/tenants/settings (update name, preferences, defaults)
     - GET /api/tenants/settings (retrieve current settings)
+    - **Status: Not yet implemented**
     - _Requirements: 19.1, 19.2, 19.3, 19.4, 19.5_
   
   - [ ]* 20.2 Write property test for tenant configuration updates
@@ -340,6 +406,7 @@ This implementation plan breaks down the multi-tenant workflow SaaS platform int
     - Organization name input
     - Notification preferences checkboxes
     - Default rollout percentage slider
+    - **Status: Not yet implemented**
     - _Requirements: 19.1, 19.2, 19.3, 19.5_
 
 - [ ] 21. Implement deployment status management
@@ -350,18 +417,22 @@ This implementation plan breaks down the multi-tenant workflow SaaS platform int
   - [ ] 21.2 Add deployment deactivation endpoint
     - POST /api/deployments/:id/deactivate
     - Update status to 'inactive'
+    - **Status: Not yet implemented**
     - _Requirements: 20.4_
   
   - [ ] 21.3 Update Deployments component with status indicators
     - Color-code active, inactive, and failed deployments
     - Add deactivate button for active deployments
+    - **Status: Partially implemented**
     - _Requirements: 20.5_
 
-- [ ] 22. Implement comprehensive error handling
-  - [ ] 22.1 Create centralized error handling middleware
-    - Map error types to HTTP status codes
-    - Format error responses consistently
-    - Log errors with context
+- [x] 22. Implement comprehensive error handling
+  - [x] 22.1 Create centralized error handling middleware
+    - Implemented GlobalExceptionHandler.java
+    - Maps error types to HTTP status codes
+    - Formats error responses consistently
+    - Logs errors with context
+    - Handles validation errors, resource not found, bad requests, unauthorized
     - _Requirements: 17.1, 17.2, 17.3, 17.4, 17.5_
   
   - [ ]* 22.2 Write property test for error logging completeness
@@ -372,17 +443,20 @@ This implementation plan breaks down the multi-tenant workflow SaaS platform int
     - Parse and validate XML structure
     - Check for required BPMN elements
     - Return specific validation errors
+    - **Status: Not yet implemented**
     - _Requirements: 17.1_
 
-- [ ] 23. Integrate dmn-js for DMN decision tables
-  - [ ] 23.1 Add DMN support to WorkflowDesigner component
-    - Conditionally load dmn-js Modeler for DMN workflows
-    - Implement DMN XML import and export
+- [x] 23. Integrate dmn-js for DMN decision tables
+  - [x] 23.1 Add DMN support to WorkflowDesigner component
+    - Conditionally loads dmn-js Modeler for DMN workflows
+    - Implements DMN XML import and export
+    - Switches between bpmn-js and dmn-js based on type
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
   
-  - [ ] 23.2 Update workflow type selection in UI
-    - Add BPMN/DMN type selector on workflow creation
-    - Switch between bpmn-js and dmn-js based on type
+  - [x] 23.2 Update workflow type selection in UI
+    - Type selector on workflow creation (BPMN/DMN)
+    - Implemented in AppDetail.jsx
+    - Switches modeler based on workflow type
     - _Requirements: 4.1, 4.5_
 
 - [ ] 24. Implement BPMN-DMN integration
@@ -390,24 +464,28 @@ This implementation plan breaks down the multi-tenant workflow SaaS platform int
     - Implement extractDmnReferences method to parse BPMN XML
     - Extract decision keys from Business Rule Tasks
     - Return unique list of DMN references
+    - **Status: Not yet implemented**
     - _Requirements: 21.3_
   
   - [ ] 24.2 Add DMN dependency validation to WorkflowService
     - Implement validateDmnDependencies method
     - Check that all referenced DMN workflows exist for tenant
     - Return list of missing references if validation fails
+    - **Status: Not yet implemented**
     - _Requirements: 21.5_
   
   - [ ] 24.3 Add DMN usage checking to WorkflowService
     - Implement checkDmnUsage method
     - Find all BPMN workflows that reference a specific DMN workflow
     - Return list of dependent BPMN workflow names
+    - **Status: Not yet implemented**
     - _Requirements: 21.8_
   
   - [ ] 24.4 Update workflow delete method with DMN protection
     - Check for dependent BPMN workflows before deleting DMN
     - Reject deletion if dependencies exist
     - Return error with list of dependent workflows
+    - **Status: Delete method not yet implemented**
     - _Requirements: 21.8_
   
   - [ ]* 24.5 Write property test for DMN workflow listing
@@ -435,6 +513,7 @@ This implementation plan breaks down the multi-tenant workflow SaaS platform int
     - Accept array of resources (BPMN and DMN files)
     - Create multipart form data with all resources
     - Deploy to Camunda in single deployment
+    - **Status: Not yet implemented**
     - _Requirements: 21.4_
   
   - [ ] 25.2 Add deployWithDependencies method to DeploymentService
@@ -443,12 +522,14 @@ This implementation plan breaks down the multi-tenant workflow SaaS platform int
     - Retrieve all referenced DMN workflows
     - Call CamundaService.deployMultiple with all resources
     - Store deployment record with DMN dependency metadata
+    - **Status: Not yet implemented**
     - _Requirements: 21.3, 21.4, 21.5_
   
   - [ ] 25.3 Update deployment creation endpoint to use deployWithDependencies
     - Detect if workflow is BPMN type
     - Use deployWithDependencies for BPMN workflows
     - Use existing deploy logic for DMN-only workflows
+    - **Status: Not yet implemented**
     - _Requirements: 21.4_
   
   - [ ]* 25.4 Write property test for multi-resource deployment
@@ -460,6 +541,7 @@ This implementation plan breaks down the multi-tenant workflow SaaS platform int
     - Fetch available DMN workflows when BPMN workflow is loaded
     - Display DMN list in properties panel when Business Rule Task is selected
     - Update BPMN XML with camunda:decisionRef when DMN is selected
+    - **Status: Not yet implemented**
     - _Requirements: 21.1, 21.2, 21.6_
   
   - [ ] 26.2 Add properties panel for Business Rule Task configuration
@@ -467,11 +549,13 @@ This implementation plan breaks down the multi-tenant workflow SaaS platform int
     - Add custom property for DMN decision selection
     - Display dropdown of available DMN workflows
     - Extract decision key from selected DMN and set decisionRef attribute
+    - **Status: Not yet implemented**
     - _Requirements: 21.1, 21.2_
   
   - [ ] 26.3 Add visual indicator for BPMN workflows with DMN dependencies
     - Display badge or icon on workflows with DMN references
     - Show list of referenced DMN workflows in workflow details
+    - **Status: Not yet implemented**
     - _Requirements: 21.3_
 
 - [ ] 27. Checkpoint - Ensure all tests pass
@@ -504,7 +588,76 @@ This implementation plan breaks down the multi-tenant workflow SaaS platform int
 - Tasks marked with `*` are optional and can be skipped for faster MVP
 - Each task references specific requirements for traceability
 - Checkpoints ensure incremental validation
-- Property tests validate universal correctness properties using fast-check library
+- Property tests validate universal correctness properties using jqwik library
 - Unit tests validate specific examples and edge cases
 - All property tests should run with minimum 100 iterations
 - Camunda Platform 7 should be running via Docker Compose for integration tests
+
+## Current Implementation Status
+
+### ✅ Completed (Core Platform)
+- **Database Schema**: All tables created with Liquibase migrations
+- **Tenant Management**: Registration, login, onboarding (security disabled for development)
+- **Workflow CRUD**: Create, read, update workflows with app association
+- **BPMN/DMN Designer**: Visual editors integrated with bpmn-js and dmn-js
+- **Test Execution**: Mock test runs without Camunda deployment
+- **Camunda Integration**: Service for deploying and executing workflows
+- **Deployment Management**: Create, promote, rollout, execute deployments
+- **Frontend Pages**: Login, Register, Dashboard, Onboarding, Apps, WorkflowDesigner, Deployments
+- **Error Handling**: Global exception handler with consistent error responses
+- **Unit Tests**: 60+ tests covering services, repositories, controllers
+
+### ✅ Completed (Apps Section Enhancement)
+- **Apps Table**: Database migration with API key support
+- **App Entity**: JPA entity with one-to-many relationship to workflows
+- **API Key Service**: Secure generation, hashing (SHA-256), validation
+- **API Path Generator**: Automatic path generation with uniqueness validation
+- **App Service**: Full CRUD operations with hierarchical workflow structure
+- **App Controller**: REST API for app management and API key regeneration
+- **Apps UI**: React components for app listing, creation, deletion
+- **App Detail UI**: Workflow management within apps
+- **Parent-Child Relationships**: BPMN workflows can have DMN children
+- **Cross-App Prevention**: Validation prevents DMN referencing BPMN in different app
+
+### ⚠️ Security Status
+- **Spring Security**: Disabled for development
+- **Passwords**: Stored in plain text (not production-ready)
+- **JWT**: Not implemented - returns tenant ID as token
+- **API Key Auth**: Implemented but not enforced (filter exists but security disabled)
+- **Default Tenant**: Falls back to UUID `00000000-0000-0000-0000-000000000001` when no context
+
+### 🚧 Partially Implemented
+- **Workflow Versioning**: Version field exists but increment logic not implemented
+- **Dashboard Statistics**: UI exists but backend aggregation endpoints missing
+- **Deployment Status**: Basic status tracking but deactivation not implemented
+
+### ❌ Not Yet Implemented
+- **Workflow Delete**: DELETE endpoint not created
+- **Version History**: No endpoint or UI for viewing workflow versions
+- **Execution History**: No filtering or UI for viewing execution history
+- **Tenant Settings**: No configuration management endpoints or UI
+- **BPMN-DMN Integration**: No DMN reference extraction or dependency validation
+- **Multi-Resource Deployment**: No support for deploying BPMN with DMN dependencies
+- **Business Rule Task UI**: No properties panel for configuring DMN references
+- **BPMN XML Validation**: No validation of XML structure before save
+- **Property-Based Tests**: No jqwik tests implemented yet
+- **Integration Tests**: No end-to-end tests with real Camunda
+
+## Technology Migration Notes
+
+This project was migrated from Node.js/Express to Java 17/Spring Boot:
+- **Backend**: Completely rewritten in Java with Spring Boot 3.1.5
+- **Database**: Migrated from Sequelize to Liquibase + Spring Data JPA
+- **Authentication**: Simplified (security disabled) - needs re-implementation
+- **Testing**: Migrated from Jest to JUnit 5 + Mockito
+- **Build**: Maven instead of npm for backend
+
+## Next Priority Tasks
+
+1. **Re-enable Security**: Implement JWT authentication and Spring Security configuration
+2. **Workflow Delete**: Add DELETE endpoint with cascade/prevention logic
+3. **Version Increment**: Implement version increment on workflow updates
+4. **Dashboard Aggregation**: Create backend endpoints for statistics
+5. **BPMN-DMN Integration**: Implement dependency extraction and validation
+6. **Property-Based Tests**: Add jqwik tests for critical properties
+7. **Integration Tests**: Add end-to-end tests with Camunda

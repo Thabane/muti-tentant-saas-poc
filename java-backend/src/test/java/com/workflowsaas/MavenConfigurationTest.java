@@ -14,7 +14,7 @@ class MavenConfigurationTest {
     void testSpringBootVersionIsAvailable() {
         String version = SpringBootVersion.getVersion();
         assertNotNull(version, "Spring Boot version should be available");
-        assertTrue(version.startsWith("3.2"), "Spring Boot version should be 3.2.x");
+        assertTrue(version.startsWith("3.1"), "Spring Boot version should be 3.1.x");
     }
 
     @Test
@@ -36,9 +36,7 @@ class MavenConfigurationTest {
         assertDoesNotThrow(() -> Class.forName("org.springframework.data.jpa.repository.JpaRepository"),
                 "Spring Data JPA should be on classpath");
         
-        // Test Spring Security
-        assertDoesNotThrow(() -> Class.forName("org.springframework.security.config.annotation.web.configuration.EnableWebSecurity"),
-                "Spring Security should be on classpath");
+        // Note: Spring Security has been intentionally removed from this project
         
         // Test PostgreSQL driver
         assertDoesNotThrow(() -> Class.forName("org.postgresql.Driver"),

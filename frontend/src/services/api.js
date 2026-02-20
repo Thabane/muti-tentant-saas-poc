@@ -19,6 +19,16 @@ export const tenantAPI = {
   completeOnboarding: () => api.patch('/tenants/onboarding'),
 };
 
+export const appAPI = {
+  create: (data) => api.post('/apps', data),
+  getAll: () => api.get('/apps'),
+  getById: (id) => api.get(`/apps/${id}`),
+  update: (id, data) => api.put(`/apps/${id}`, data),
+  delete: (id) => api.delete(`/apps/${id}`),
+  regenerateKey: (id) => api.post(`/apps/${id}/regenerate-key`),
+  createWorkflow: (appId, data) => api.post('/workflows', { ...data, appId }),
+};
+
 export const workflowAPI = {
   create: (data) => api.post('/workflows', data),
   getAll: () => api.get('/workflows'),

@@ -169,7 +169,9 @@ public class DeploymentService {
     private UUID getTenantId() {
         var tenantId = TenantContextHolder.getTenantId();
         if (tenantId == null) {
-            throw new UnauthorizedException("Not authenticated");
+            // TODO: When security is re-enabled, this should throw UnauthorizedException
+            // For now, use default tenant ID since security is disabled
+            tenantId = UUID.fromString("00000000-0000-0000-0000-000000000001");
         }
         return tenantId;
     }

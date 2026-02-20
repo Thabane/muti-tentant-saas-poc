@@ -9,28 +9,21 @@ import com.workflowsaas.exception.BadRequestException;
 import com.workflowsaas.exception.ResourceNotFoundException;
 import com.workflowsaas.exception.UnauthorizedException;
 import com.workflowsaas.repository.TenantRepository;
-import com.workflowsaas.security.JwtTokenProvider;
 import com.workflowsaas.security.TenantContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Service for tenant management operations.
+ * Note: Security is disabled - passwords are stored in plain text.
  */
 @Service
 public class TenantService {
     
     private final TenantRepository tenantRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtTokenProvider jwtTokenProvider;
     
-    public TenantService(TenantRepository tenantRepository, 
-                        PasswordEncoder passwordEncoder,
-                        JwtTokenProvider jwtTokenProvider) {
+    public TenantService(TenantRepository tenantRepository) {
         this.tenantRepository = tenantRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtTokenProvider = jwtTokenProvider;
     }
     
     @Transactional
@@ -46,14 +39,16 @@ public class TenantService {
         tenant.setName(request.name());
         tenant.setSlug(request.slug());
         tenant.setEmail(request.email());
-        tenant.setPasswordHash(passwordEncoder.encode(request.password()));
+        tenant.setPasswordHash(request.password()); // Plain text - security disabled
         
         tenant = tenantRepository.save(tenant);
         
-        String token = jwtTokenProvider.generateToken(tenant.getId(), tenant.getEmail());
+        // Set tenant context for this session
+        TenantContextHolder.setTenantId(tenant.getId());
+        
         TenantResponse tenantResponse = toTenantResponse(tenant);
         
-        return new AuthResponse(tenantResponse, token);
+        return new AuthResponse(tenantResponse, tenant.getId().toString());
     }
     
     @Transactional(readOnly = true)
@@ -61,21 +56,25 @@ public class TenantService {
         Tenant tenant = tenantRepository.findByEmail(request.email())
             .orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
         
-        if (!passwordEncoder.matches(request.password(), tenant.getPasswordHash())) {
+        if (!request.password().equals(tenant.getPasswordHash())) {
             throw new UnauthorizedException("Invalid credentials");
         }
         
-        String token = jwtTokenProvider.generateToken(tenant.getId(), tenant.getEmail());
+        // Set tenant context for this session
+        TenantContextHolder.setTenantId(tenant.getId());
+        
         TenantResponse tenantResponse = toTenantResponse(tenant);
         
-        return new AuthResponse(tenantResponse, token);
+        return new AuthResponse(tenantResponse, tenant.getId().toString());
     }
     
     @Transactional(readOnly = true)
     public TenantResponse getCurrentTenant() {
         var tenantId = TenantContextHolder.getTenantId();
         if (tenantId == null) {
-            throw new UnauthorizedException("Not authenticated");
+            // TODO: When security is re-enabled, this should throw UnauthorizedException
+            // For now, use default tenant ID since security is disabled
+            tenantId = java.util.UUID.fromString("00000000-0000-0000-0000-000000000001");
         }
         
         Tenant tenant = tenantRepository.findById(tenantId)
@@ -88,7 +87,9 @@ public class TenantService {
     public void completeOnboarding() {
         var tenantId = TenantContextHolder.getTenantId();
         if (tenantId == null) {
-            throw new UnauthorizedException("Not authenticated");
+            // TODO: When security is re-enabled, this should throw UnauthorizedException
+            // For now, use default tenant ID since security is disabled
+            tenantId = java.util.UUID.fromString("00000000-0000-0000-0000-000000000001");
         }
         
         Tenant tenant = tenantRepository.findById(tenantId)

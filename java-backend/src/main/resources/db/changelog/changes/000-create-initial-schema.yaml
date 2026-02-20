@@ -1,0 +1,325 @@
+databaseChangeLog:
+  - changeSet:
+      id: 000-create-tenants-table
+      author: system
+      changes:
+        - createTable:
+            tableName: tenants
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                  defaultValueComputed: gen_random_uuid()
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: slug
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: email
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: password_hash
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: NOW()
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: NOW()
+        
+        - createIndex:
+            tableName: tenants
+            indexName: idx_tenants_email
+            columns:
+              - column:
+                  name: email
+        
+        - createIndex:
+            tableName: tenants
+            indexName: idx_tenants_slug
+            columns:
+              - column:
+                  name: slug
+
+  - changeSet:
+      id: 000-create-workflows-table
+      author: system
+      changes:
+        - createTable:
+            tableName: workflows
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                  defaultValueComputed: gen_random_uuid()
+              - column:
+                  name: tenant_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: text
+              - column:
+                  name: bpmn_xml
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: workflow_type
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: NOW()
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: NOW()
+        
+        - addForeignKeyConstraint:
+            baseTableName: workflows
+            baseColumnNames: tenant_id
+            constraintName: fk_workflows_tenant
+            referencedTableName: tenants
+            referencedColumnNames: id
+            onDelete: CASCADE
+        
+        - createIndex:
+            tableName: workflows
+            indexName: idx_workflows_tenant_id
+            columns:
+              - column:
+                  name: tenant_id
+
+  - changeSet:
+      id: 000-create-deployments-table
+      author: system
+      changes:
+        - createTable:
+            tableName: deployments
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                  defaultValueComputed: gen_random_uuid()
+              - column:
+                  name: tenant_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: workflow_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: environment
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: camunda_deployment_id
+                  type: varchar(255)
+              - column:
+                  name: rollout_percentage
+                  type: integer
+                  constraints:
+                    nullable: false
+                  defaultValue: "0"
+              - column:
+                  name: status
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: NOW()
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: NOW()
+        
+        - addForeignKeyConstraint:
+            baseTableName: deployments
+            baseColumnNames: tenant_id
+            constraintName: fk_deployments_tenant
+            referencedTableName: tenants
+            referencedColumnNames: id
+            onDelete: CASCADE
+        
+        - addForeignKeyConstraint:
+            baseTableName: deployments
+            baseColumnNames: workflow_id
+            constraintName: fk_deployments_workflow
+            referencedTableName: workflows
+            referencedColumnNames: id
+            onDelete: CASCADE
+        
+        - createIndex:
+            tableName: deployments
+            indexName: idx_deployments_tenant_id
+            columns:
+              - column:
+                  name: tenant_id
+        
+        - createIndex:
+            tableName: deployments
+            indexName: idx_deployments_workflow_id
+            columns:
+              - column:
+                  name: workflow_id
+        
+        - createIndex:
+            tableName: deployments
+            indexName: idx_deployments_environment
+            columns:
+              - column:
+                  name: environment
+
+  - changeSet:
+      id: 000-create-workflow-executions-table
+      author: system
+      changes:
+        - createTable:
+            tableName: workflow_executions
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                  defaultValueComputed: gen_random_uuid()
+              - column:
+                  name: tenant_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: workflow_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: deployment_id
+                  type: uuid
+              - column:
+                  name: camunda_process_instance_id
+                  type: varchar(255)
+              - column:
+                  name: status
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: started_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: NOW()
+              - column:
+                  name: completed_at
+                  type: timestamp
+              - column:
+                  name: input_variables
+                  type: text
+              - column:
+                  name: output_variables
+                  type: text
+              - column:
+                  name: error_message
+                  type: text
+        
+        - addForeignKeyConstraint:
+            baseTableName: workflow_executions
+            baseColumnNames: tenant_id
+            constraintName: fk_executions_tenant
+            referencedTableName: tenants
+            referencedColumnNames: id
+            onDelete: CASCADE
+        
+        - addForeignKeyConstraint:
+            baseTableName: workflow_executions
+            baseColumnNames: workflow_id
+            constraintName: fk_executions_workflow
+            referencedTableName: workflows
+            referencedColumnNames: id
+            onDelete: CASCADE
+        
+        - addForeignKeyConstraint:
+            baseTableName: workflow_executions
+            baseColumnNames: deployment_id
+            constraintName: fk_executions_deployment
+            referencedTableName: deployments
+            referencedColumnNames: id
+            onDelete: SET NULL
+        
+        - createIndex:
+            tableName: workflow_executions
+            indexName: idx_executions_tenant_id
+            columns:
+              - column:
+                  name: tenant_id
+        
+        - createIndex:
+            tableName: workflow_executions
+            indexName: idx_executions_workflow_id
+            columns:
+              - column:
+                  name: workflow_id
+        
+        - createIndex:
+            tableName: workflow_executions
+            indexName: idx_executions_status
+            columns:
+              - column:
+                  name: status

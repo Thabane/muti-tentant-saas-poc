@@ -1,6 +1,6 @@
 package com.workflowsaas.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -14,21 +14,20 @@ import java.util.List;
  * CORS configuration for cross-origin requests.
  */
 @Configuration
+@RequiredArgsConstructor
 public class CorsConfig {
     
-    @Value("${spring.profiles.active:production}")
-    private String activeProfile;
-    
-    @Value("${cors.allowed.origins:http://localhost:5173}")
-    private String allowedOrigins;
+    private final ApplicationProperties applicationProperties;
     
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
         
+        String activeProfile = applicationProperties.getProfile();
         if ("development".equals(activeProfile) || "dev".equals(activeProfile)) {
             config.addAllowedOriginPattern("*");
         } else {
+            String allowedOrigins = applicationProperties.getCors().getAllowedOrigins();
             List<String> origins = Arrays.asList(allowedOrigins.split(","));
             config.setAllowedOrigins(origins);
         }

@@ -6,6 +6,8 @@ import Dashboard from './pages/Dashboard';
 import WorkflowDesigner from './pages/WorkflowDesigner';
 import Deployments from './pages/Deployments';
 import Onboarding from './pages/Onboarding';
+import Apps from './pages/Apps';
+import AppDetail from './pages/AppDetail';
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -35,6 +37,16 @@ function App() {
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/apps" element={
+          <ProtectedRoute>
+            <Apps />
+          </ProtectedRoute>
+        } />
+        <Route path="/apps/:appId" element={
+          <ProtectedRoute>
+            <AppDetail />
           </ProtectedRoute>
         } />
         <Route path="/workflows/:id?" element={

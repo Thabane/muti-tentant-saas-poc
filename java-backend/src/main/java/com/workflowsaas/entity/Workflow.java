@@ -12,7 +12,12 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "workflows", 
-       uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_id", "name", "version"}))
+       uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_id", "name"}),
+       indexes = {
+           @Index(name = "idx_workflows_app_id", columnList = "app_id"),
+           @Index(name = "idx_workflows_parent_id", columnList = "parent_workflow_id"),
+           @Index(name = "idx_workflows_api_path", columnList = "api_path")
+       })
 @Data
 public class Workflow {
     
@@ -23,23 +28,38 @@ public class Workflow {
     @Column(name = "tenant_id", nullable = false)
     private UUID tenantId;
     
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "app_id")
+    private App app;
+    
     @Column(nullable = false)
     private String name;
     
-    @Column(nullable = false, length = 50)
+    @Column(columnDefinition = "TEXT")
+    private String description;
+    
+    @Column(name = "workflow_type", nullable = false, length = 50)
     private String type;
     
     @Column(name = "bpmn_xml", columnDefinition = "TEXT")
     private String bpmnXml;
     
-    @Column(name = "dmn_xml", columnDefinition = "TEXT")
-    private String dmnXml;
-    
-    @Column(nullable = false)
+    // Note: version and status columns don't exist in database yet
+    // Keeping these as transient until migration is added
+    @Transient
     private Integer version = 1;
     
-    @Column(length = 50)
+    @Transient
     private String status = "draft";
+    
+    @Column(name = "parent_workflow_id")
+    private UUID parentWorkflowId;
+    
+    @Column(name = "api_path", length = 500)
+    private String apiPath;
+    
+    @Column(name = "sub_service")
+    private String subService;
     
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

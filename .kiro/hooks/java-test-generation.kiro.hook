@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Generate Java Tests",
+  "description": "Automatically creates or updates test files for Java source files when they are created or edited",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "java-backend/src/main/java/**/*.java"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A Java source file was modified. Create or update corresponding test files following these rules:\n1. For controllers: Create both unit tests (with mocks) and integration tests (with @SpringBootTest)\n2. For services: Create unit tests with mocked dependencies\n3. For repositories: Create integration tests with @DataJpaTest\n4. For entities: Create basic validation tests\n5. Use JUnit 5, Mockito, and jqwik where appropriate\n6. Follow the naming convention: {ClassName}Test.java for integration tests, {ClassName}UnitTest.java for unit tests\n7. Place tests in src/test/java/ mirroring the source structure"
+  }
+}

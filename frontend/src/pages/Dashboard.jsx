@@ -65,14 +65,14 @@ function Dashboard() {
 
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2>Workflows</h2>
-          <button className="btn-primary" onClick={() => navigate('/workflows')}>
-            Create Workflow
+          <h2>Apps</h2>
+          <button className="btn-primary" onClick={() => navigate('/apps')}>
+            Manage Apps
           </button>
         </div>
         
         {workflows.length === 0 ? (
-          <p>No workflows yet. Create your first workflow to get started.</p>
+          <p>No apps yet. Create your first app to get started.</p>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>

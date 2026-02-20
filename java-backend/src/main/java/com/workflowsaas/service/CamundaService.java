@@ -4,14 +4,15 @@ import com.workflowsaas.dto.camunda.CamundaDeployment;
 import com.workflowsaas.dto.camunda.CamundaVariable;
 import com.workflowsaas.dto.camunda.ProcessInstance;
 import com.workflowsaas.exception.CamundaIntegrationException;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.http.*;
+import org.camunda.bpm.engine.RepositoryService;
+import org.camunda.bpm.engine.RuntimeService;
+import org.camunda.bpm.engine.repository.Deployment;
+import org.camunda.bpm.engine.runtime.ProcessInstanceWithVariables;
+import org.camunda.bpm.engine.variable.Variables;
+import org.camunda.bpm.engine.variable.value.TypedValue;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
 
+import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -19,46 +20,36 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Service for Camunda BPM Platform 7 integration.
+ * Service for Camunda BPM Platform 7 embedded engine integration.
  */
 @Service
 public class CamundaService {
     
-    private final RestTemplate restTemplate;
-    private final String camundaUrl;
+    private final RepositoryService repositoryService;
+    private final RuntimeService runtimeService;
     
-    public CamundaService(RestTemplate restTemplate, 
-                         @Value("${camunda.rest.url}") String camundaUrl) {
-        this.restTemplate = restTemplate;
-        this.camundaUrl = camundaUrl;
+    public CamundaService(RepositoryService repositoryService, 
+                         RuntimeService runtimeService) {
+        this.repositoryService = repositoryService;
+        this.runtimeService = runtimeService;
     }
     
     public CamundaDeployment deployBpmn(String bpmnXml, String deploymentName, UUID tenantId) {
         try {
             String enhancedBpmn = ensureHistoryTimeToLive(bpmnXml);
             
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+            Deployment deployment = repositoryService.createDeployment()
+                .name(deploymentName)
+                .tenantId(tenantId.toString())
+                .addInputStream("workflow.bpmn", new ByteArrayInputStream(enhancedBpmn.getBytes()))
+                .deploy();
             
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("deployment-name", deploymentName);
-            body.add("tenant-id", tenantId.toString());
-            body.add("data", new ByteArrayResource(enhancedBpmn.getBytes()) {
-                @Override
-                public String getFilename() {
-                    return "workflow.bpmn";
-                }
-            });
-            
-            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-            
-            ResponseEntity<CamundaDeployment> response = restTemplate.postForEntity(
-                camundaUrl + "/deployment/create",
-                requestEntity,
-                CamundaDeployment.class
+            return new CamundaDeployment(
+                deployment.getId(),
+                deployment.getName(),
+                deployment.getDeploymentTime().toString(),
+                deployment.getTenantId()
             );
-            
-            return response.getBody();
         } catch (Exception e) {
             throw new CamundaIntegrationException("Failed to deploy to Camunda: " + e.getMessage());
         }
@@ -77,47 +68,50 @@ public class CamundaService {
     
     public ProcessInstance startProcessInstance(String processKey, Map<String, Object> variables, UUID tenantId) {
         try {
-            Map<String, Object> request = new HashMap<>();
-            request.put("variables", convertToProcessVariables(variables));
-            request.put("tenantId", tenantId.toString());
+            Map<String, Object> processVariables = convertToProcessVariables(variables);
             
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
+            ProcessInstanceWithVariables instance = runtimeService
+                .createProcessInstanceByKey(processKey)
+                .setVariables(processVariables)
+                .processDefinitionTenantId(tenantId.toString())
+                .executeWithVariablesInReturn();
             
-            HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(request, headers);
-            
-            ResponseEntity<ProcessInstance> response = restTemplate.postForEntity(
-                camundaUrl + "/process-definition/key/" + processKey + "/start",
-                requestEntity,
-                ProcessInstance.class
+            return new ProcessInstance(
+                instance.getId(),
+                instance.getProcessDefinitionId(),
+                instance.getBusinessKey(),
+                tenantId.toString(),
+                instance.isEnded(),
+                instance.isSuspended()
             );
-            
-            return response.getBody();
         } catch (Exception e) {
             throw new CamundaIntegrationException("Failed to start process instance: " + e.getMessage());
         }
     }
     
-    public Map<String, CamundaVariable> convertToProcessVariables(Map<String, Object> data) {
-        Map<String, CamundaVariable> variables = new HashMap<>();
+    public Map<String, Object> convertToProcessVariables(Map<String, Object> data) {
+        Map<String, Object> variables = new HashMap<>();
         
         for (Map.Entry<String, Object> entry : data.entrySet()) {
             Object value = entry.getValue();
-            String type;
+            TypedValue typedValue;
             
             if (value instanceof String) {
-                type = "String";
+                typedValue = Variables.stringValue((String) value);
             } else if (value instanceof Integer) {
-                type = "Integer";
-            } else if (value instanceof Double || value instanceof Float) {
-                type = "Double";
+                typedValue = Variables.integerValue((Integer) value);
+            } else if (value instanceof Long) {
+                typedValue = Variables.longValue((Long) value);
+            } else if (value instanceof Double) {
+                typedValue = Variables.doubleValue((Double) value);
             } else if (value instanceof Boolean) {
-                type = "Boolean";
+                typedValue = Variables.booleanValue((Boolean) value);
             } else {
-                type = "Json";
+                // Complex objects as JSON
+                typedValue = Variables.objectValue(value).create();
             }
             
-            variables.put(entry.getKey(), new CamundaVariable(value, type));
+            variables.put(entry.getKey(), typedValue);
         }
         
         return variables;
