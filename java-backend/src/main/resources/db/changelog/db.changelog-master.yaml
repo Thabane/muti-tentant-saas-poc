@@ -11,3 +11,7 @@ databaseChangeLog:
       file: db/changelog/changes/004-insert-default-tenant.yaml
   - include:
       file: db/changelog/changes/001-add-deployment-timestamps.yaml
+  - include:
+      file: db/changelog/changes/006-create-app-configuration-tables.yaml
+  - include:
+      file: db/changelog/changes/007-add-tenant-configuration-columns.yaml

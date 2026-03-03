@@ -5,9 +5,11 @@ import com.workflowsaas.dto.request.TestRunRequest;
 import com.workflowsaas.dto.request.UpdateWorkflowRequest;
 import com.workflowsaas.dto.response.WorkflowExecutionResult;
 import com.workflowsaas.dto.response.WorkflowInfo;
+import com.workflowsaas.entity.App;
 import com.workflowsaas.entity.Workflow;
 import com.workflowsaas.entity.WorkflowExecution;
 import com.workflowsaas.exception.ResourceNotFoundException;
+import com.workflowsaas.repository.AppRepository;
 import com.workflowsaas.repository.WorkflowExecutionRepository;
 import com.workflowsaas.repository.WorkflowRepository;
 import com.workflowsaas.security.TenantContextHolder;
@@ -28,13 +30,16 @@ public class WorkflowService {
     private final WorkflowRepository workflowRepository;
     private final WorkflowExecutionRepository executionRepository;
     private final ApiPathGenerator apiPathGenerator;
+    private final AppRepository appRepository;
     
     public WorkflowService(WorkflowRepository workflowRepository,
                           WorkflowExecutionRepository executionRepository,
-                          ApiPathGenerator apiPathGenerator) {
+                          ApiPathGenerator apiPathGenerator,
+                          AppRepository appRepository) {
         this.workflowRepository = workflowRepository;
         this.executionRepository = executionRepository;
         this.apiPathGenerator = apiPathGenerator;
+        this.appRepository = appRepository;
     }
     
     @Transactional
@@ -45,6 +50,10 @@ public class WorkflowService {
         if (request.appId() == null) {
             throw new IllegalArgumentException("Resource must be associated with an app");
         }
+        
+        // Load the app entity
+        App app = appRepository.findByIdAndTenantId(request.appId(), tenantId)
+            .orElseThrow(() -> new ResourceNotFoundException("App not found with id: " + request.appId()));
         
         // Validate parent-child relationships for DMN
         if (request.parentWorkflowId() != null) {
@@ -63,6 +72,7 @@ public class WorkflowService {
         
         Workflow workflow = new Workflow();
         workflow.setTenantId(tenantId);
+        workflow.setApp(app);  // Set the app relationship
         workflow.setName(request.name());
         workflow.setType(request.type());
         // Both BPMN and DMN content are stored in bpmn_xml column

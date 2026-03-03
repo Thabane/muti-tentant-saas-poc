@@ -1,5 +1,6 @@
 package com.workflowsaas.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -42,6 +43,7 @@ public class App {
     private LocalDateTime updatedAt;
     
     @OneToMany(mappedBy = "app", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore  // Prevent circular reference during JSON serialization
     private List<Workflow> workflows = new ArrayList<>();
     
     @PrePersist

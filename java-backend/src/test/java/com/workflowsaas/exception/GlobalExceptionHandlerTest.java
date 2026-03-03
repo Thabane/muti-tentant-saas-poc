@@ -169,8 +169,11 @@ class GlobalExceptionHandlerTest {
         assertNotNull(response);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertTrue(response.getBody().error().contains("name: must not be blank"));
-        assertTrue(response.getBody().error().contains("email: must be valid"));
+        assertEquals("Validation failed", response.getBody().error());
+        assertNotNull(response.getBody().errors());
+        assertEquals(2, response.getBody().errors().size());
+        assertEquals("must not be blank", response.getBody().errors().get("name"));
+        assertEquals("must be valid", response.getBody().errors().get("email"));
     }
 
     @Test
@@ -190,6 +193,8 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals("Validation failed", response.getBody().error());
+        assertNotNull(response.getBody().errors());
+        assertEquals(0, response.getBody().errors().size());
     }
 
     @Test
@@ -270,5 +275,60 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals("An app with this name already exists", response.getBody().error());
+    }
+
+    @Test
+    void testHandleFileValidationException() {
+        // Arrange
+        FileValidationException ex = new FileValidationException("Invalid JSON at line 5, column 12");
+
+        // Act
+        ResponseEntity<ErrorResponse> response = exceptionHandler.handleFileValidationException(ex);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("File validation failed", response.getBody().error());
+        assertNotNull(response.getBody().errors());
+        assertEquals(1, response.getBody().errors().size());
+        assertEquals("Invalid JSON at line 5, column 12", response.getBody().errors().get("file"));
+    }
+
+    @Test
+    void testHandleConfigurationNotFoundException() {
+        // Arrange
+        java.util.UUID appId = java.util.UUID.randomUUID();
+        ConfigurationNotFoundException ex = new ConfigurationNotFoundException(appId);
+
+        // Act
+        ResponseEntity<ErrorResponse> response = exceptionHandler.handleConfigurationNotFoundException(ex);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Configuration not found", response.getBody().error());
+        assertNotNull(response.getBody().errors());
+        assertEquals(1, response.getBody().errors().size());
+        assertTrue(response.getBody().errors().get("appId").contains(appId.toString()));
+    }
+
+    @Test
+    void testHandleUnauthorizedAccessException() {
+        // Arrange
+        UnauthorizedAccessException ex = new UnauthorizedAccessException("App does not belong to your tenant");
+
+        // Act
+        ResponseEntity<ErrorResponse> response = exceptionHandler.handleUnauthorizedAccessException(ex);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Access denied", response.getBody().error());
+        assertNotNull(response.getBody().errors());
+        assertEquals(1, response.getBody().errors().size());
+        assertEquals("App does not belong to your tenant", response.getBody().errors().get("reason"));
     }
 }

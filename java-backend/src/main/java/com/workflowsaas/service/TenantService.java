@@ -106,6 +106,7 @@ public class TenantService {
             tenant.getSlug(),
             tenant.getEmail(),
             tenant.getFeatures(),
+            tenant.getConfiguration(),
             tenant.getOnboardingCompleted()
         );
     }

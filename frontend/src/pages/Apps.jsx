@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { appAPI } from '../services/api';
+import AppTreeView from '../components/AppTreeView';
 
 function Apps() {
   const [apps, setApps] = useState([]);
@@ -95,6 +96,8 @@ function Apps() {
         </button>
       </div>
 
+      <AppTreeView apps={apps} />
+
       {error && (
         <div style={{ 
           background: '#f8d7da', 
@@ -107,39 +110,6 @@ function Apps() {
           {error}
         </div>
       )}
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-        {apps.map((app) => (
-          <div key={app.id} className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '15px' }}>
-              <h3>{app.name}</h3>
-              <button
-                onClick={() => deleteApp(app.id)}
-                style={{ 
-                  color: '#dc3545', 
-                  background: 'none', 
-                  border: 'none', 
-                  cursor: 'pointer',
-                  fontSize: '14px'
-                }}
-              >
-                Delete
-              </button>
-            </div>
-            <div style={{ fontSize: '14px', color: '#666', marginBottom: '15px' }}>
-              <p>Created: {new Date(app.createdAt).toLocaleDateString()}</p>
-              <p style={{ marginTop: '8px' }}>Workflows: {app.workflows?.length || 0}</p>
-            </div>
-            <button
-              onClick={() => navigate(`/apps/${app.id}`)}
-              className="btn-primary"
-              style={{ width: '100%' }}
-            >
-              View Details
-            </button>
-          </div>
-        ))}
-      </div>
 
       {apps.length === 0 && (
         <div className="card" style={{ textAlign: 'center', padding: '40px' }}>

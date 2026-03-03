@@ -13,5 +13,6 @@ public record TenantResponse(
     String slug,
     String email,
     Map<String, Object> features,
+    Map<String, Object> configuration,
     Boolean onboardingCompleted
 ) {}

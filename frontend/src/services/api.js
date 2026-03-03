@@ -20,13 +20,18 @@ export const tenantAPI = {
 };
 
 export const appAPI = {
-  create: (data) => api.post('/apps', data),
-  getAll: () => api.get('/apps'),
-  getById: (id) => api.get(`/apps/${id}`),
-  update: (id, data) => api.put(`/apps/${id}`, data),
-  delete: (id) => api.delete(`/apps/${id}`),
-  regenerateKey: (id) => api.post(`/apps/${id}/regenerate-key`),
-  createWorkflow: (appId, data) => api.post('/workflows', { ...data, appId }),
+  getAll: () => axios.get('/api/apps'),
+  getById: (id) => axios.get(`/api/apps/${id}`),
+  create: (data) => axios.post('/api/apps', data),
+  update: (id, data) => axios.put(`/api/apps/${id}`, data),
+  delete: (id) => axios.delete(`/api/apps/${id}`),
+  regenerateKey: (id) => axios.post(`/api/apps/${id}/regenerate-key`),
+  createWorkflow: (appId, data) => axios.post('/api/workflows', { ...data, appId }),
+  getConfig: (appId) => axios.get(`/api/v1/apps/${appId}/config`),
+  createConfig: (appId, config) => axios.post(`/api/v1/apps/${appId}/config`, config),
+  updateConfig: (appId, config) => axios.put(`/api/v1/apps/${appId}/config`, config),
+  deleteEnrichmentApi: (appId, enrichmentApiId) => axios.delete(`/api/v1/apps/${appId}/config/enrichment-apis/${enrichmentApiId}`),
+  deletePublisher: (appId) => axios.delete(`/api/v1/apps/${appId}/config/publisher`),
 };
 
 export const workflowAPI = {

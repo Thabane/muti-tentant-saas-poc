@@ -7,11 +7,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Global exception handler for consistent error responses.
@@ -19,12 +22,13 @@ import java.io.StringWriter;
 @Slf4j
 @RestControllerAdvice
 @RequiredArgsConstructor
-public class GlobalExceptionHandler {
+class GlobalExceptionHandler {
     
     private final ApplicationProperties applicationProperties;
     
     @ExceptionHandler(WorkflowSaasException.class)
     public ResponseEntity<ErrorResponse> handleWorkflowSaasException(WorkflowSaasException ex) {
+        log.error("WorkflowSaasException: {}", ex.getMessage(), ex);
         ErrorResponse response = new ErrorResponse(
             ex.getMessage(),
             isDevelopment() ? getStackTrace(ex) : null
@@ -32,18 +36,57 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(ex.getStatusCode()).body(response);
     }
     
-    @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidationException(
-            org.springframework.web.bind.MethodArgumentNotValidException ex) {
-        String message = ex.getBindingResult().getFieldErrors().stream()
-            .map(error -> error.getField() + ": " + error.getDefaultMessage())
-            .reduce((a, b) -> a + "; " + b)
-            .orElse("Validation failed");
-
-        log.error("Validation error: {}", message, ex);
-
-        ErrorResponse response = new ErrorResponse(message, isDevelopment() ? getStackTrace(ex) : null);
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(error -> 
+            errors.put(error.getField(), error.getDefaultMessage())
+        );
+        
+        log.error("Validation error: {}", errors, ex);
+        
+        ErrorResponse response = new ErrorResponse(
+            "Validation failed",
+            errors,
+            isDevelopment() ? getStackTrace(ex) : null
+        );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+    
+    @ExceptionHandler(FileValidationException.class)
+    public ResponseEntity<ErrorResponse> handleFileValidationException(FileValidationException ex) {
+        log.error("File validation error: {}", ex.getMessage(), ex);
+        Map<String, String> errors = Map.of("file", ex.getMessage());
+        ErrorResponse response = new ErrorResponse(
+            "File validation failed",
+            errors,
+            isDevelopment() ? getStackTrace(ex) : null
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+    
+    @ExceptionHandler(ConfigurationNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleConfigurationNotFoundException(ConfigurationNotFoundException ex) {
+        log.error("Configuration not found: {}", ex.getMessage(), ex);
+        Map<String, String> errors = Map.of("appId", ex.getMessage());
+        ErrorResponse response = new ErrorResponse(
+            "Configuration not found",
+            errors,
+            isDevelopment() ? getStackTrace(ex) : null
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+    
+    @ExceptionHandler(UnauthorizedAccessException.class)
+    public ResponseEntity<ErrorResponse> handleUnauthorizedAccessException(UnauthorizedAccessException ex) {
+        log.error("Unauthorized access: {}", ex.getMessage(), ex);
+        Map<String, String> errors = Map.of("reason", ex.getMessage());
+        ErrorResponse response = new ErrorResponse(
+            "Access denied",
+            errors,
+            isDevelopment() ? getStackTrace(ex) : null
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
     
     @ExceptionHandler(DataIntegrityViolationException.class)
@@ -59,12 +102,15 @@ public class GlobalExceptionHandler {
             }
         }
         
+        log.error("Data integrity violation: {}", message, ex);
+        
         ErrorResponse response = new ErrorResponse(message, isDevelopment() ? getStackTrace(ex) : null);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
     
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
+        log.error("Unexpected error", ex);
         ErrorResponse response = new ErrorResponse(
             "Internal server error",
             isDevelopment() ? getStackTrace(ex) : null

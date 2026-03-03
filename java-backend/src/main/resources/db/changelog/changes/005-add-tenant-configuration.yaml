@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-add-tenant-configuration
+      author: system
+      changes:
+        - addColumn:
+            tableName: tenants
+            columns:
+              - column:
+                  name: configuration
+                  type: jsonb
+                  defaultValueComputed: '{}'::jsonb
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropColumn:
+            tableName: tenants
+            columnName: configuration

@@ -28,7 +28,7 @@ public class Workflow {
     @Column(name = "tenant_id", nullable = false)
     private UUID tenantId;
     
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "app_id")
     private App app;
     

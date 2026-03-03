@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: 007-add-tenant-configuration-columns
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: tenants
+                columnName: configuration
+      changes:
+        - addColumn:
+            tableName: tenants
+            columns:
+              - column:
+                  name: configuration
+                  type: jsonb
+                  defaultValueComputed: "'{}'::jsonb"

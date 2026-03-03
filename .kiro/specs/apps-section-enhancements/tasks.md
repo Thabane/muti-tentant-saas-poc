@@ -230,8 +230,8 @@ This implementation plan transforms the "Workflows" section into an "Apps" secti
     - Test "Apps" terminology in breadcrumbs
     - _Requirements: 1.1, 1.2, 1.3_
 
-- [ ] 11. Create frontend AppTreeView component
-  - [ ] 11.1 Implement AppTreeView component
+- [x] 11. Create frontend AppTreeView component
+  - [x] 11.1 Implement AppTreeView component
     - Create tree structure with App → BPMN → DMN hierarchy
     - Implement node expansion/collapse
     - Render BPMN nodes with "Service" label
@@ -248,8 +248,8 @@ This implementation plan transforms the "Workflows" section into an "Apps" secti
     - Test BPMN with no DMNs
     - _Requirements: 3.1, 3.2, 3.4, 3.5, 4.1, 5.3_
 
-- [ ] 12. Create frontend ApiKeyDisplay component
-  - [ ] 12.1 Implement ApiKeyDisplay component
+- [x] 12. Create frontend ApiKeyDisplay component
+  - [x] 12.1 Implement ApiKeyDisplay component
     - Display API key with masked/visible toggle
     - Implement copy to clipboard functionality
     - Implement regenerate key functionality with confirmation
@@ -262,11 +262,11 @@ This implementation plan transforms the "Workflows" section into an "Apps" secti
     - Test visibility toggle
     - _Requirements: 6.3, 6.5_
 
-- [ ] 13. Checkpoint - Ensure all frontend tests pass
+- [x] 13. Checkpoint - Ensure all frontend tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 14. Create data migration script
-  - [ ] 14.1 Implement migration script
+  - [x] 14.1 Implement migration script
     - Create default app for each tenant
     - Associate all existing BPMNs with default app
     - Preserve all parent_workflow_id relationships

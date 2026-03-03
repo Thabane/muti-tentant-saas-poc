@@ -39,6 +39,10 @@ public class Tenant {
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> features = new HashMap<>();
     
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private Map<String, Object> configuration = new HashMap<>();
+    
     @Column(name = "onboarding_completed")
     private Boolean onboardingCompleted = false;
     

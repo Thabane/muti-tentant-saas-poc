@@ -1,0 +1,339 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-create-app-configurations-table
+      author: system
+      changes:
+        - createTable:
+            tableName: app_configurations
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                  defaultValueComputed: gen_random_uuid()
+              - column:
+                  name: tenant_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: app_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: source
+                  type: varchar(10)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: parameters_filename
+                  type: varchar(255)
+              - column:
+                  name: parameters_content
+                  type: text
+              - column:
+                  name: model_filename
+                  type: varchar(255)
+              - column:
+                  name: model_content
+                  type: text
+              - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: NOW()
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: NOW()
+        
+        - sql:
+            sql: ALTER TABLE app_configurations ADD CONSTRAINT check_source_value CHECK (source IN ('eeh', 'api'))
+        
+        - addUniqueConstraint:
+            tableName: app_configurations
+            columnNames: app_id
+            constraintName: unique_config_per_app
+        
+        - addForeignKeyConstraint:
+            baseTableName: app_configurations
+            baseColumnNames: tenant_id
+            constraintName: fk_app_config_tenant
+            referencedTableName: tenants
+            referencedColumnNames: id
+            onDelete: CASCADE
+        
+        - addForeignKeyConstraint:
+            baseTableName: app_configurations
+            baseColumnNames: app_id
+            constraintName: fk_app_config_app
+            referencedTableName: apps
+            referencedColumnNames: id
+            onDelete: CASCADE
+        
+        - createIndex:
+            tableName: app_configurations
+            indexName: idx_app_config_tenant_id
+            columns:
+              - column:
+                  name: tenant_id
+        
+        - createIndex:
+            tableName: app_configurations
+            indexName: idx_app_config_app_id
+            columns:
+              - column:
+                  name: app_id
+
+  - changeSet:
+      id: 006-create-enrichment-api-configs-table
+      author: system
+      changes:
+        - createTable:
+            tableName: enrichment_api_configs
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                  defaultValueComputed: gen_random_uuid()
+              - column:
+                  name: tenant_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: app_config_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: openapi_document
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: request_mappings
+                  type: text
+              - column:
+                  name: config_properties
+                  type: jsonb
+              - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: NOW()
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: NOW()
+        
+        - addForeignKeyConstraint:
+            baseTableName: enrichment_api_configs
+            baseColumnNames: tenant_id
+            constraintName: fk_enrichment_api_tenant
+            referencedTableName: tenants
+            referencedColumnNames: id
+            onDelete: CASCADE
+        
+        - addForeignKeyConstraint:
+            baseTableName: enrichment_api_configs
+            baseColumnNames: app_config_id
+            constraintName: fk_enrichment_api_config
+            referencedTableName: app_configurations
+            referencedColumnNames: id
+            onDelete: CASCADE
+        
+        - createIndex:
+            tableName: enrichment_api_configs
+            indexName: idx_enrichment_api_tenant_id
+            columns:
+              - column:
+                  name: tenant_id
+        
+        - createIndex:
+            tableName: enrichment_api_configs
+            indexName: idx_enrichment_api_config_id
+            columns:
+              - column:
+                  name: app_config_id
+
+  - changeSet:
+      id: 006-create-publisher-configs-table
+      author: system
+      changes:
+        - createTable:
+            tableName: publisher_configs
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                  defaultValueComputed: gen_random_uuid()
+              - column:
+                  name: tenant_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: app_config_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: type
+                  type: varchar(10)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: openapi_document
+                  type: text
+              - column:
+                  name: request_mappings
+                  type: text
+              - column:
+                  name: config_properties
+                  type: jsonb
+              - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: NOW()
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: NOW()
+        
+        - sql:
+            sql: ALTER TABLE publisher_configs ADD CONSTRAINT check_publisher_type_value CHECK (type IN ('api', 'eeh'))
+        
+        - addUniqueConstraint:
+            tableName: publisher_configs
+            columnNames: app_config_id
+            constraintName: unique_publisher_per_app_config
+        
+        - addForeignKeyConstraint:
+            baseTableName: publisher_configs
+            baseColumnNames: tenant_id
+            constraintName: fk_publisher_config_tenant
+            referencedTableName: tenants
+            referencedColumnNames: id
+            onDelete: CASCADE
+        
+        - addForeignKeyConstraint:
+            baseTableName: publisher_configs
+            baseColumnNames: app_config_id
+            constraintName: fk_publisher_config_app_config
+            referencedTableName: app_configurations
+            referencedColumnNames: id
+            onDelete: CASCADE
+        
+        - createIndex:
+            tableName: publisher_configs
+            indexName: idx_publisher_config_tenant_id
+            columns:
+              - column:
+                  name: tenant_id
+        
+        - createIndex:
+            tableName: publisher_configs
+            indexName: idx_publisher_config_app_config_id
+            columns:
+              - column:
+                  name: app_config_id
+
+  - changeSet:
+      id: 006-create-warehouse-publisher-configs-table
+      author: system
+      changes:
+        - createTable:
+            tableName: warehouse_publisher_configs
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                  defaultValueComputed: gen_random_uuid()
+              - column:
+                  name: tenant_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: publisher_config_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: avro_schema
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: mappings
+                  type: text
+              - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: NOW()
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: NOW()
+        
+        - addUniqueConstraint:
+            tableName: warehouse_publisher_configs
+            columnNames: publisher_config_id
+            constraintName: unique_warehouse_per_publisher
+        
+        - addForeignKeyConstraint:
+            baseTableName: warehouse_publisher_configs
+            baseColumnNames: tenant_id
+            constraintName: fk_warehouse_publisher_tenant
+            referencedTableName: tenants
+            referencedColumnNames: id
+            onDelete: CASCADE
+        
+        - addForeignKeyConstraint:
+            baseTableName: warehouse_publisher_configs
+            baseColumnNames: publisher_config_id
+            constraintName: fk_warehouse_publisher_config
+            referencedTableName: publisher_configs
+            referencedColumnNames: id
+            onDelete: CASCADE
+        
+        - createIndex:
+            tableName: warehouse_publisher_configs
+            indexName: idx_warehouse_publisher_tenant_id
+            columns:
+              - column:
+                  name: tenant_id
+        
+        - createIndex:
+            tableName: warehouse_publisher_configs
+            indexName: idx_warehouse_publisher_config_id
+            columns:
+              - column:
+                  name: publisher_config_id

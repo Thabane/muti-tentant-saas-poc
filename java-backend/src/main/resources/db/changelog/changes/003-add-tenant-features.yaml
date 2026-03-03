@@ -2,6 +2,12 @@ databaseChangeLog:
   - changeSet:
       id: 003-add-tenant-features
       author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: tenants
+                columnName: features
       changes:
         - addColumn:
             tableName: tenants
